@@ -1,10 +1,9 @@
 from flask import Flask, request, jsonify
 import requests
-import datetime
 
 app = Flask(__name__)
 
-API_KEY = '9f97dc8994e6ddc5b21551e62362ddc7'  # ← 여기에 너의 Odds API 키를 입력하세요
+API_KEY = '9f97dc8994e6ddc5b21551e62362ddc7'  # ← 네 API 키 넣기
 
 def get_mlb_odds(date_string):
     try:
@@ -16,32 +15,36 @@ def get_mlb_odds(date_string):
 
         games = res.json()
         if not games:
-            return "📭 해당 날짜에 예정된 MLB 경기가 없습니다."
+            return "📭 오늘 예정된 MLB 경기가 없습니다."
 
-        msg = f"💰 MLB 배당 정보\n"
+        msg = f"💰 MLB 배당 정보 ({len(games)}경기)\n"
+
         for game in games:
+            teams = game.get('teams')
+            if not teams or len(teams) != 2:
+                continue
+
+            team1, team2 = teams
+            price1 = price2 = '정보 없음'
+
             try:
-                teams = game['teams']
-                commence_time = game['commence_time'][:10]
-
                 bookmakers = game.get('bookmakers', [])
-                if not bookmakers:
-                    continue
-                markets = bookmakers[0].get('markets', [])
-                if not markets:
-                    continue
-                outcomes = markets[0].get('outcomes', [])
-                if len(outcomes) != 2:
-                    continue
-
-                msg += f"- {teams[0]} vs {teams[1]}: {outcomes[0]['price']} / {outcomes[1]['price']} (경기일: {commence_time})\n"
+                if bookmakers:
+                    markets = bookmakers[0].get('markets', [])
+                    if markets:
+                        outcomes = markets[0].get('outcomes', [])
+                        if len(outcomes) == 2:
+                            price1 = outcomes[0].get('price', 'N/A')
+                            price2 = outcomes[1].get('price', 'N/A')
             except Exception:
-                continue  # 하나라도 빠져 있으면 그냥 건너뜀
+                pass  # 출력은 하되 배당이 없으면 '정보 없음'으로
 
-        return msg or "📭 배당 정보가 없습니다."
+            msg += f"- {team1} vs {team2}: {price1} / {price2}\n"
+
+        return msg
 
     except Exception as e:
-        return f"오류 발생: {str(e)}"
+        return f"❗ 처리 중 오류 발생: {str(e)}"
 
 
 @app.route("/", methods=["POST"])
