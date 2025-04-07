@@ -20,19 +20,25 @@ def get_mlb_odds(date_string):
 
         msg = f"💰 MLB 배당 정보\n"
         for game in games:
-            teams = game['teams']
-            commence_time = game['commence_time'][:10]  # 날짜 정보 추출
-            bookmakers = game.get('bookmakers', [])
-            if not bookmakers:
-                continue
-            markets = bookmakers[0].get('markets', [])
-            if not markets:
-                continue
-            outcomes = markets[0].get('outcomes', [])
-            if len(outcomes) != 2:
-                continue
-            msg += f"- {teams[0]} vs {teams[1]}: {outcomes[0]['price']} / {outcomes[1]['price']} (경기일: {commence_time})\n"
-        return msg
+            try:
+                teams = game['teams']
+                commence_time = game['commence_time'][:10]
+
+                bookmakers = game.get('bookmakers', [])
+                if not bookmakers:
+                    continue
+                markets = bookmakers[0].get('markets', [])
+                if not markets:
+                    continue
+                outcomes = markets[0].get('outcomes', [])
+                if len(outcomes) != 2:
+                    continue
+
+                msg += f"- {teams[0]} vs {teams[1]}: {outcomes[0]['price']} / {outcomes[1]['price']} (경기일: {commence_time})\n"
+            except Exception:
+                continue  # 하나라도 빠져 있으면 그냥 건너뜀
+
+        return msg or "📭 배당 정보가 없습니다."
 
     except Exception as e:
         return f"오류 발생: {str(e)}"
