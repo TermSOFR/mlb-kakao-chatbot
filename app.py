@@ -20,31 +20,24 @@ def get_mlb_odds(date_string):
         msg = f"💰 MLB 배당 정보 ({len(games)}경기)\n"
 
         for game in games:
-            try:
-                team1 = game['teams'][0]
-                team2 = game['teams'][1]
-            except Exception:
-                msg += "- 팀 정보 없음\n"
-                continue
-
-            price1 = price2 = '정보 없음'
+            home = game.get("home_team", "홈팀 없음")
+            away = game.get("away_team", "원정팀 없음")
+            odds = "배당 정보 없음"
 
             try:
-                bookmakers = game['bookmakers']
-                for bookmaker in bookmakers:
-                    markets = bookmaker['markets']
-                    for market in markets:
-                        outcomes = market['outcomes']
-                        if len(outcomes) >= 2:
-                            price1 = outcomes[0].get('price', '정보 없음')
-                            price2 = outcomes[1].get('price', '정보 없음')
-                            break  # 한 쌍만 가져오고 끝냄
-                    if price1 != '정보 없음':
-                        break
-            except Exception:
-                pass
+                # 첫 번째 bookmaker만 사용
+                bookmaker = game['bookmakers'][0]
+                market = bookmaker['markets'][0]
+                outcomes = market['outcomes']
+                team1 = outcomes[0]
+                team2 = outcomes[1]
 
-            msg += f"- {team1} vs {team2}: {price1} / {price2}\n"
+                odds = f"{team2['name']} @ {team1['name']}: {team2['price']} / {team1['price']}"
+
+            except Exception:
+                odds = f"{away} @ {home}: 배당 정보 없음"
+
+            msg += f"- {odds}\n"
 
         return msg
 
